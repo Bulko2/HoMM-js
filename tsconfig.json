@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "module": "amd",
+        "outDir": "js/",
+        "sourceMap": true,
+        "watch": true,
+        "target": "es6",
+        "outFile": "app.js"
+    }
+}
