@@ -301,7 +301,6 @@ class Game {
         this._fpsCounter.Render(this.Context);
     }
     GameLoop() {
-        this._context.ClearRect(0, 0, this._context.Height, this._context.Width);
         if (!this._isStarted) {
             return;
         }
@@ -309,6 +308,7 @@ class Game {
             let time = performance.now();
             let delta = time - this._lastTime;
             this._lastTime = time;
+            this._context.ClearRect(0, 0, this._context.Height, this._context.Width);
             this.Update(delta);
             this.Render();
         }

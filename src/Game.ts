@@ -60,8 +60,6 @@ abstract class Game {
     }
 
     private GameLoop(): void {
-        this._context.ClearRect(0, 0, this._context.Height, this._context.Width);
-        
         if (!this._isStarted) {
             return;
         }
@@ -70,6 +68,7 @@ abstract class Game {
             let time: number = performance.now();
             let delta: number = time - this._lastTime;
             this._lastTime = time;
+            this._context.ClearRect(0, 0, this._context.Height, this._context.Width);
             this.Update(delta);
             this.Render();
         }
