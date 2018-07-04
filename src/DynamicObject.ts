@@ -4,6 +4,6 @@ class DynamicObject extends AnimatedObject {
     }
 
     public Render(context: IRenderingContext): void {        
-        
+        this._spriteSheet.Render(context);
     }
 }

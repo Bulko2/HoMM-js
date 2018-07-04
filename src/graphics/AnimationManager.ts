@@ -12,8 +12,6 @@ class AnimationManager implements IAnimationManager {
         let result: boolean = this._sheets.hasOwnProperty(key);
         
         if (result) {
-            console.warn("The item with ket '" + key + "' already exists.");
-
             return result;
         }
         
@@ -35,8 +33,6 @@ class AnimationManager implements IAnimationManager {
 
     public Remove(key: string): void {
         if (!this.IsAnimationExists(key)) {
-            console.warn("Such key '" + key + "' does not exist.");
-
             return;
         }
 

@@ -1,3 +1,4 @@
+
 abstract class GraphicObject implements IRenderable, IUpdatable {
     private _x: number;
     private _y: number;

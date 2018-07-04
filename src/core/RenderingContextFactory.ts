@@ -1,6 +1,6 @@
 class RenderingContextFactory {
     public Create(type: RenderType): IRenderingContext {
-        if (type == RenderType.Canvas2D) {
+        if (type === RenderType.Canvas2D) {
             return new RenderingContext2D();
         }
         

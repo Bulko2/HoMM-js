@@ -18,7 +18,7 @@ class SpriteSheet implements IRenderable, IUpdatable {
 
         this._frames = new Array<ISpriteFrame>(this._state.countOfFrames);
 
-        if (this._state.direction == Direction.Right) {
+        if (this._state.direction === Direction.Right) {
             this._size = this._state.countOfFrames * this._state.width;
 
             for (let index = 0; index < this._state.countOfFrames; index++) {
@@ -58,7 +58,7 @@ class SpriteSheet implements IRenderable, IUpdatable {
     public Update(time: number): void {
         this._frameIndex++;
         this._frameInterval = this._frameInterval - this._state.frameInterval;
-        let frameSize = this._state.direction == Direction.Down ? this._state.height : this._state.width;
+        let frameSize = this._state.direction === Direction.Down ? this._state.height : this._state.width;
 
         if (this._frameIndex * frameSize == this._size) {
             this._frameIndex = 0;
@@ -72,7 +72,8 @@ class SpriteSheet implements IRenderable, IUpdatable {
 
         let index: number = this._manager.Get(this._state.sprite.AssetName).Index;
         let frame: ISpriteFrame = this._frames[index];
-        context.ClearRect(this._state.x, this._state.y, frame.width, frame.height);
+        // context.ClearRect(this._state.x, this._state.y, frame.width, frame.height);
+        
         context.DrawImage9(
             this._state.sprite.Image,
             frame.dx,

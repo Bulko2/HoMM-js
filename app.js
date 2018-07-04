@@ -19,18 +19,41 @@ class GraphicObject {
 class AnimatedObject extends GraphicObject {
     constructor(spriteSheet, sprite) {
         super(sprite);
-        this.spriteSheet = spriteSheet;
+        this._spriteSheet = spriteSheet;
     }
 }
 class DynamicObject extends AnimatedObject {
     Update(time) {
     }
     Render(context) {
+        this._spriteSheet.Render(context);
+    }
+}
+class FpsCounter {
+    constructor() {
+        this._frameCount = 0;
+        this._prevTime = 0;
+        this._prevFrameCount = 0;
+    }
+    Update(time) {
+        this._frameCount++;
+        if (this._prevTime > 1000) {
+            this._prevFrameCount = this._frameCount;
+            this._frameCount = 0;
+            this._prevTime = time;
+        }
+        this._prevTime += time;
+    }
+    Render(context) {
+        // context.ClearRect(0, 0, 100, 100);
+        context.FillStyle = "red";
+        context.Font = "22px serif";
+        context.FillText(this._prevFrameCount.toString(), 50, 50, 100);
     }
 }
 class RenderingContextFactory {
     Create(type) {
-        if (type == RenderType.Canvas2D) {
+        if (type === RenderType.Canvas2D) {
             return new RenderingContext2D();
         }
         return null;
@@ -45,6 +68,9 @@ class RenderingContext2D {
         let canvas = document.createElement("canvas");
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        // canvas.addEventListener("click", (event) => {
+        //     console.log(event.clientX + ", " + event.clientY);
+        // });
         this._context = canvas.getContext("2d");
         this._context.imageSmoothingEnabled = false;
         document.body.appendChild(canvas);
@@ -54,6 +80,9 @@ class RenderingContext2D {
     }
     get Height() {
         return this._context.canvas.height;
+    }
+    IsPointInPath(x, y) {
+        return this._context.isPointInPath(x, y);
     }
     ClearRect(x, y, w, h) {
         this._context.clearRect(x, y, w, h);
@@ -66,6 +95,15 @@ class RenderingContext2D {
     }
     DrawImage9(image, srcX, srcY, srcW, srcH, dstX, dstY, dstW, dstH) {
         this._context.drawImage(image, srcX, srcY, srcW, srcH, dstX, dstY, dstW, dstH);
+    }
+    set Font(font) {
+        this._context.font = font;
+    }
+    set FillStyle(fillStyle) {
+        this._context.fillStyle = fillStyle;
+    }
+    FillText(text, x, y, maxWidth) {
+        this._context.fillText(text, x, y, maxWidth);
     }
 }
 class Sprite {
@@ -117,7 +155,7 @@ class SpriteSheet {
             return;
         }
         this._frames = new Array(this._state.countOfFrames);
-        if (this._state.direction == Direction.Right) {
+        if (this._state.direction === Direction.Right) {
             this._size = this._state.countOfFrames * this._state.width;
             for (let index = 0; index < this._state.countOfFrames; index++) {
                 this._frames[index] = {
@@ -150,7 +188,7 @@ class SpriteSheet {
     Update(time) {
         this._frameIndex++;
         this._frameInterval = this._frameInterval - this._state.frameInterval;
-        let frameSize = this._state.direction == Direction.Down ? this._state.height : this._state.width;
+        let frameSize = this._state.direction === Direction.Down ? this._state.height : this._state.width;
         if (this._frameIndex * frameSize == this._size) {
             this._frameIndex = 0;
         }
@@ -161,7 +199,7 @@ class SpriteSheet {
         }
         let index = this._manager.Get(this._state.sprite.AssetName).Index;
         let frame = this._frames[index];
-        context.ClearRect(this._state.x, this._state.y, frame.width, frame.height);
+        // context.ClearRect(this._state.x, this._state.y, frame.width, frame.height);
         context.DrawImage9(this._state.sprite.Image, frame.dx, frame.dy, frame.width, frame.height, this._state.x, this._state.y, frame.width, frame.height);
     }
 }
@@ -180,7 +218,6 @@ class AnimationManager {
     IsAnimationExists(key) {
         let result = this._sheets.hasOwnProperty(key);
         if (result) {
-            console.warn("The item with ket '" + key + "' already exists.");
             return result;
         }
         return result;
@@ -197,7 +234,6 @@ class AnimationManager {
     }
     Remove(key) {
         if (!this.IsAnimationExists(key)) {
-            console.warn("Such key '" + key + "' does not exist.");
             return;
         }
         this._count--;
@@ -224,79 +260,116 @@ class AnimationManager {
 /// <reference path="graphics/AnimationManager.ts" />
 class Game {
     constructor() {
-        this._lastTime = new Date().getTime();
-        const size = 16;
+        this._lastTime = 0;
+        this._isPaused = false;
+        this._isStarted = false;
+        this._fpsCounter = new FpsCounter();
         this._context = new RenderingContextFactory().Create(RenderType.Canvas2D);
         this._animationManager = AnimationManager.Create(2);
-        this._sprites = new Array(size * size);
-        // let startX = (this.context.Width / 2) - 256;
-        // let startY = (this.context.Height / 2) - 256;
-        // for (let row = 0; row < 8; row++) {
-        //     for (let col = 0; col < 8; col++) {
-        //         startX += 32;
-        //         this.context.Rect(startX, startY, 32, 32);
-        //     }
-        //     startX = (this.context.Width / 2) - 256;
-        //     startY += 32;
-        // }
-        let items = ["chest", "crystal", "fire", "gems", "gold"];
-        let startX = 0;
-        let startY = 0;
-        for (let i = 1; i <= this._sprites.length; i++) {
-            let row = 0;
-            let index = Math.floor(Math.random() * items.length);
-            let sprite = new Sprite({
-                path: "assets/" + items[index] + ".png",
-                height: 32,
-                width: 32
-            });
-            let sheet = new SpriteSheet(this._animationManager, {
-                sprite: sprite,
-                direction: Direction.Down,
-                countOfFrames: 8,
-                frameInterval: 2,
-                height: 32,
-                width: 32,
-                x: startX,
-                y: startY
-            });
-            this._sprites[i - 1] = sheet;
-            startX += 32;
-            if (i % size == 0) {
-                startX = 0;
-                startY += 32;
-            }
+        window.onblur = () => {
+            this._isPaused = true;
+        };
+        window.onfocus = () => {
+            this._isPaused = false;
+            this._lastTime = performance.now();
+        };
+    }
+    Start() {
+        if (this._isStarted) {
+            return;
         }
+        this._isStarted = true;
         this.GameLoop();
+    }
+    Stop() {
+        if (!this._isStarted) {
+            return;
+        }
+        this._isStarted = false;
+    }
+    get AnimationManager() {
+        return this._animationManager;
+    }
+    get Context() {
+        return this._context;
     }
     Update(time) {
         this._animationManager.Update(time);
-        // for (let i = 0; i < this._sprites.length; i++) {
-        //     this._sprites[i].Update(time);
-        // }
+        this._fpsCounter.Update(time);
     }
     Render() {
-        for (let i = 0; i < this._sprites.length; i++) {
-            this._sprites[i].Render(this._context);
-        }
+        this._fpsCounter.Render(this.Context);
     }
     GameLoop() {
-        var currentTime = new Date().getTime();
-        var frameTime = currentTime - this._lastTime;
-        var time = frameTime / 60;
-        this._lastTime = currentTime;
-        this.Update(time);
-        this.Render();
+        this._context.ClearRect(0, 0, this._context.Height, this._context.Width);
+        if (!this._isStarted) {
+            return;
+        }
+        if (!this._isPaused) {
+            let time = performance.now();
+            let delta = time - this._lastTime;
+            this._lastTime = time;
+            this.Update(delta);
+            this.Render();
+        }
         window.requestAnimationFrame(this.GameLoop.bind(this));
     }
 }
-let game = new Game();
 /// <reference path="GraphicObject.ts" />
 class GameObject extends GraphicObject {
     constructor(sprite) {
         super(sprite);
     }
 }
+class Montezuma extends Game {
+    constructor() {
+        super();
+        this.size = 32;
+        this._field = new Array(this.size);
+        let items = ["chest", "crystal", "fire", "gems", "gold"];
+        let startX = (this.Context.Width / 3) - 256;
+        let startY = 20;
+        for (let i = 0; i < this.size; i++) {
+            let row = new Array(this.size);
+            for (let j = 0; j < this.size; j++) {
+                let index = Math.floor(Math.random() * items.length);
+                let sprite = new Sprite({
+                    path: "assets/" + items[index] + ".png",
+                    height: 32,
+                    width: 32
+                });
+                let sheet = new SpriteSheet(this.AnimationManager, {
+                    sprite: sprite,
+                    direction: Direction.Down,
+                    countOfFrames: 8,
+                    frameInterval: 2,
+                    height: 32,
+                    width: 32,
+                    x: startX,
+                    y: startY
+                });
+                row[j] = new DynamicObject(sheet, sprite);
+                startX += 32;
+            }
+            this._field[i] = row;
+            startX = (this.Context.Width / 3) - 256;
+            startY += 32;
+        }
+    }
+    Update(time) {
+        super.Update(time);
+    }
+    Render() {
+        super.Render();
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                this._field[i][j].Render(this.Context);
+            }
+        }
+    }
+}
+let montezuma = new Montezuma();
+montezuma.Start();
 class SimpleObject extends GameObject {
     constructor(sprite) {
         super(sprite);
@@ -307,9 +380,5 @@ class SimpleObject extends GameObject {
     }
 }
 class GraphicResource {
-}
-class SpriteFrame {
-    constructor() {
-    }
 }
 //# sourceMappingURL=app.js.map

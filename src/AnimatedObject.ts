@@ -1,12 +1,10 @@
 /// <reference path="GraphicObject.ts" />
 
 abstract class AnimatedObject extends GraphicObject { 
-    protected spriteSheet: SpriteSheet;
+    protected _spriteSheet: SpriteSheet;
     
     constructor(spriteSheet: SpriteSheet, sprite: Sprite) {
         super(sprite);
-        this.spriteSheet = spriteSheet;
+        this._spriteSheet = spriteSheet;
     }
-
-
 }
